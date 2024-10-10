@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -134,10 +134,14 @@ void StartDefaultTask(void *argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN StartDefaultTask */
+  int16_t temperature = 32;
+  int16_t humidity = 53;
+
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	printf("Temperature: %d, Humidity: %d\r\n",temperature, humidity);
+    osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */
 }

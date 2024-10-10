@@ -46,7 +46,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+extern UART_HandleTypeDef huart3;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -58,6 +58,19 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void serial_write (const char data)
+{
+    while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TXE) == RESET);
+
+    huart3.Instance->DR = data;
+}
+
+// This is std C; make sure to get fn name correctly
+int __io_putchar(int ch)
+{
+	serial_write(ch);
+	return ch;
+}
 
 /* USER CODE END 0 */
 
