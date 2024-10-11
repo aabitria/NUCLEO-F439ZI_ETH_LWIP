@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include "lwip/api.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,6 +46,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+osThreadId_t tcp_task_handle;
+const osThreadAttr_t tcp_echo_attributes = {
+  .name = "TCP_ECHO_TASK",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityRealtime,
+};
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -61,6 +68,7 @@ const osThreadAttr_t defaultTask_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
+void tcp_echo_task (void *argument);
 
 extern void MX_LWIP_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -134,13 +142,12 @@ void StartDefaultTask(void *argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN StartDefaultTask */
-  int16_t temperature = 32;
-  int16_t humidity = 53;
 
+  osThreadNew(tcp_echo_task, NULL, &tcp_echo_attributes);
   /* Infinite loop */
   for(;;)
   {
-	printf("Temperature: %d, Humidity: %d\r\n",temperature, humidity);
+	printf("Running...\r\n");
     osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */
@@ -148,6 +155,53 @@ void StartDefaultTask(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+void tcp_echo_task (void *argument)
+{
+	struct netconn *conn, *newconn;
+	err_t err, accept_err;
+	struct netbuf *buf;
+	void *data;
+	uint16_t len;
+	//err_t recv_err;
 
+	LWIP_UNUSED_ARG(argument);
+
+	conn = netconn_new(NETCONN_TCP);
+	if (conn != NULL) {
+
+		err = netconn_bind(conn, NULL, 7);
+		if (err == ERR_OK) {
+
+			netconn_listen(conn);
+
+			// Indefinite waiting
+			while (1) {
+
+				accept_err = netconn_accept(conn, &newconn);
+
+				if (accept_err == ERR_OK) {
+
+					while (netconn_recv(newconn, &buf) == ERR_OK) {
+
+						do {
+							netbuf_data(buf, &data, &len);
+							netconn_write(newconn, data, len, NETCONN_COPY);
+						} while (netbuf_next(buf) >= 0);
+
+						netbuf_delete(buf);
+					}
+
+					netconn_close(newconn);
+					netconn_delete(newconn);
+				}
+			}
+		} else {
+			netconn_delete(newconn);
+			printf(" can not bind TCP netconn\r\n");
+		}
+	} else {
+		printf("can not create TCP netconn.\r\n");
+	}
+}
 /* USER CODE END Application */
 
