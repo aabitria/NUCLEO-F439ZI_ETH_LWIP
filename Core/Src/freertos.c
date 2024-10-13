@@ -148,7 +148,7 @@ void StartDefaultTask(void *argument)
   for(;;)
   {
 	printf("Running...\r\n");
-    osDelay(1000);
+    osDelay(5000);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -168,19 +168,21 @@ void tcp_echo_task (void *argument)
 
 	conn = netconn_new(NETCONN_TCP);
 	if (conn != NULL) {
-
+		printf("netconn created...\r\n");
 		err = netconn_bind(conn, NULL, 7);
 		if (err == ERR_OK) {
-
+			printf("netconn is bound to port 7...\r\n");
 			netconn_listen(conn);
 
 			// Indefinite waiting
 			while (1) {
+				printf("Listening for connections...\r\n");
 
 				accept_err = netconn_accept(conn, &newconn);
 
 				if (accept_err == ERR_OK) {
 
+					printf("Connection accepted...\r\n");
 					while (netconn_recv(newconn, &buf) == ERR_OK) {
 
 						do {
@@ -191,8 +193,10 @@ void tcp_echo_task (void *argument)
 						netbuf_delete(buf);
 					}
 
+					/* this will be hit once connection is closed, prev err is ERR_CLSD */
 					netconn_close(newconn);
 					netconn_delete(newconn);
+					printf("Client disconnected.\r\n");
 				}
 			}
 		} else {
